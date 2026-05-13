@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Interview to Forever</title>
+<link href="[fonts.googleapis.com](https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap)" rel="stylesheet">
+<style>
+  :root {
+    --wine: #6B0F1A;
+    --deep-wine: #3D0008;
+    --neon-pink: #FF2D78;
+    --soft-pink: #FF6FA3;
+    --gold: #C9A84C;
+    --cream: #FFF0F5;
+    --dark: #050008;
+    --glass: rgba(255,255,255,0.04);
+    --glass-border: rgba(255,45,120,0.2);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--dark);
+    color: var(--cream);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ── CUSTOM CURSOR ── */
+  #cursor {
+    width: 18px; height: 18px;
+    background: radial-gradient(circle, #FF2D78, #ff6fa3);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate(-50%,-50%);
+    transition: transform 0.1s, width 0.2s, height 0.2s;
+    box-shadow: 0 0 15px #FF2D78, 0 0 30px rgba(255,45,120,0.4);
+  }
+  #cursor-trail {
+    width: 34px; height: 34px;
+    border: 1.5px solid rgba(255,45,120,0.5);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 99998;
+    transform: translate(-50%,-50%);
+    transition: left 0.12s ease, top 0.12s ease;
+  }
+  body:hover #cursor { transform: translate(-50%,-50%) scale(1.2); }
+
+  /* ── CANVAS LAYER ── */
+  #particle-canvas {
+    position: fixed; top:0; left:0;
+    width:100%; height:100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── LOADING SCREEN ── */
+  #loading {
+    position: fixed; inset:0;
+    background: radial-gradient(ellipse at center, #1a000d 0%, #050008 70%);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 1s ease, visibility 1s ease;
+  }
+  #loading.hide { opacity:0; visibility:hidden; }
+  .loading-rose {
+    font-size: 4rem;
+    animation: roseFloat 2s ease-in-out infinite;
+    margin-bottom: 2rem;
+    filter: drop-shadow(0 0 20px #FF2D78);
+  }
+  @keyframes roseFloat {
+    0%,100%{ transform: translateY(0) rotate(-5deg); }
+    50%{ transform: translateY(-15px) rotate(5deg); }
+  }
+  #typing-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.1rem, 3vw, 1.6rem);
+    font-style: italic;
+    color: var(--soft-pink);
+    text-align: center;
+    line-height: 2;
+    max-width: 500px;
+    padding: 0 2rem;
+    text-shadow: 0 0 20px rgba(255,111,163,0.6);
+    min-height: 3.5em;
+  }
+  .loading-bar-wrap {
+    margin-top: 3rem;
+    width: 200px; height: 2px;
+    background: rgba(255,45,120,0.15);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .loading-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--wine), var(--neon-pink));
+    width: 0%;
+    animation: loadBar 3s ease forwards;
+    box-shadow: 0 0 10px var(--neon-pink);
+  }
+  @keyframes loadBar { to { width: 100%; } }
+
+  /* ── SECTIONS BASE ── */
+  section {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    padding: 6rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── HERO ── */
+  #hero {
+    background: radial-gradient(ellipse at 50% 40%, rgba(107,15,26,0.4) 0%, transparent 70%);
+    text-align: center;
+    gap: 2rem;
+    padding-top: 8rem;
+  }
+  .hero-badge {
+    display: inline-block;
+    border: 1px solid rgba(255,45,120,0.4);
+    padding: 0.4rem 1.2rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--soft-pink);
+    background: rgba(255,45,120,0.06);
+    margin-bottom: 1.5rem;
+    animation: pulse-glow 2.5s infinite;
+  }
+  @keyframes pulse-glow {
+    0%,100%{ box-shadow: 0 0 5px rgba(255,45,120,0.2); }
+    50%{ box-shadow: 0 0 20px rgba(255,45,120,0.5); }
+  }
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 8vw, 7rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, #fff 0%, #ff6fa3 40%, var(--neon-pink) 70%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    text-shadow: none;
+    position: relative;
+  }
+  .hero-title::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #fff 0%, #ff6fa3 40%, var(--neon-pink) 70%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: blur(20px);
+    opacity: 0.4;
+  }
+  .hero-subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    font-style: italic;
+    color: rgba(255,240,245,0.7);
+    max-width: 480px;
+    line-height: 1.9;
+    letter-spacing: 0.5px;
+  }
+  .hero-hearts {
+    display: flex; gap: 0.8rem;
+    margin-top: 1rem;
+    font-size: 1.4rem;
+    animation: heartBeat 1.5s ease-in-out infinite;
+  }
+  @keyframes heartBeat {
+    0%,100%{ transform: scale(1); }
+    50%{ transform: scale(1.15); }
+  }
+  .scroll-hint {
+    margin-top: 3rem;
+    color: rgba(255,111,163,0.5);
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    animation: bounce 2s infinite;
+  }
+  @keyframes bounce {
+    0%,100%{ transform: translateY(0); }
+    50%{ transform: translateY(8px); }
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--neon-pink);
+    margin-bottom: 1rem;
+    opacity: 0.8;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 5vw, 3.2rem);
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(135deg, #fff, #ff6fa3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 3rem;
+  }
+
+  /* ── STORY SECTION ── */
+  #story {
+    background: radial-gradient(ellipse at 30% 60%, rgba(61,0,8,0.3) 0%, transparent 60%);
+    gap: 0;
+  }
+  .story-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    max-width: 900px;
+    width: 100%;
+    margin-top: 1rem;
+  }
+  .story-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 2rem;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  .story-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.7s ease, transform 0.7s ease, box-shadow 0.4s ease;
+  }
+  .story-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 20px 60px rgba(255,45,120,0.2);
+    border-color: rgba(255,45,120,0.5);
+  }
+  .story-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(255,45,120,0.07), transparent 60%);
+  }
+  .story-card .emoji {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .story-card p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    font-style: italic;
+    color: rgba(255,240,245,0.85);
+    line-height: 1.8;
+  }
+  .story-card .card-num {
+    position: absolute;
+    top: 1rem; right: 1.2rem;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: rgba(255,45,120,0.4);
+  }
+
+  /* ── ARCADE ── */
+  #arcade {
+    background: radial-gradient(ellipse at 70% 30%, rgba(107,15,26,0.25) 0%, transparent 60%);
+    gap: 2rem;
+  }
+  .arcade-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+    max-width: 900px;
+    width: 100%;
+  }
+  .game-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 2rem;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    cursor: pointer;
+    transition: all 0.35s ease;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+  }
+  .game-card:hover {
+    border-color: rgba(255,45,120,0.6);
+    box-shadow: 0 0 40px rgba(255,45,120,0.25), inset 0 0 20px rgba(255,45,120,0.05);
+    transform: translateY(-4px);
+  }
+  .game-card .game-icon { font-size: 2.5rem; margin-bottom: 0.8rem; display: block; }
+  .game-card .game-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--cream);
+    margin-bottom: 0.5rem;
+  }
+  .game-card .game-desc {
+    font-size: 0.8rem;
+    color: rgba(255,240,245,0.5);
+    line-height: 1.6;
+  }
+  .game-score {
+    margin-top: 0.8rem;
+    font-size: 0.75rem;
+    color: var(--neon-pink);
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset:0;
+    background: rgba(5,0,8,0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 9000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: linear-gradient(135deg, rgba(20,0,12,0.97), rgba(50,0,20,0.97));
+    border: 1px solid rgba(255,45,120,0.3);
+    border-radius: 28px;
+    padding: 2.5rem;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 0 80px rgba(255,45,120,0.2);
+    animation: modalIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  @keyframes modalIn {
+    from { opacity:0; transform: scale(0.8) translateY(30px); }
+    to { opacity:1; transform: scale(1) translateY(0); }
+  }
+  .modal-close {
+    position: absolute;
+    top: 1.2rem; right: 1.5rem;
+    background: none; border: none;
+    color: rgba(255,240,245,0.5);
+    font-size: 1.5rem; cursor: pointer;
+    transition: color 0.2s;
+  }
+  .modal-close:hover { color: var(--neon-pink); }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--cream);
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  /* ── GAME CANVAS ── */
+  #game-canvas {
+    display: block;
+    border-radius: 12px;
+    border: 1px solid rgba(255,45,120,0.2);
+    width: 100%; max-width: 400px;
+    margin: 0 auto;
+    background: rgba(5,0,8,0.8);
+  }
+  .game-ui {
+    display: flex; justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.85rem; color: var(--soft-pink);
+    max-width: 400px; margin: 0 auto;
+  }
+  .btn-primary {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background: linear-gradient(135deg, var(--wine), var(--neon-pink));
+    border: none; border-radius: 50px;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(255,45,120,0.3);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(255,45,120,0.5);
+  }
+
+  /* ── ESCAPE GAME ── */
+  #escape-section {
+    background: radial-gradient(ellipse at center, rgba(61,0,8,0.3) 0%, transparent 70%);
+    text-align: center;
+  }
+  .escape-box {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 28px;
+    padding: 3rem 2.5rem;
+    max-width: 500px;
+    width: 100%;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 0 60px rgba(255,45,120,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  .escape-question {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.2rem, 3vw, 1.6rem);
+    font-weight: 700;
+    color: var(--cream);
+    margin-bottom: 2.5rem;
+    line-height: 1.5;
+  }
+  .escape-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn-yes {
+    padding: 0.9rem 2.2rem;
+    background: linear-gradient(135deg, #6B0F1A, #FF2D78);
+    border: none; border-radius: 50px;
+    color: white; font-family: 'Inter', sans-serif;
+    font-size: 1rem; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(255,45,120,0.4);
+  }
+  .btn-yes:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 30px rgba(255,45,120,0.6);
+  }
+  .btn-escape {
+    padding: 0.9rem 2.2rem;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,45,120,0.3);
+    border-radius: 50px;
+    color: var(--soft-pink);
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem; font-weight: 600;
+    cursor: pointer;
+    position: absolute;
+    transition: all 0.1s;
+  }
+  .escape-msg {
+    margin-top: 1.5rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--soft-pink);
+    opacity: 0;
+    transition: opacity 0.5s;
+    min-height: 1.5em;
+  }
+  .escape-result {
+    margin-top: 2rem;
+    display: none;
+  }
+  .escape-result .result-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--neon-pink);
+    text-shadow: 0 0 20px rgba(255,45,120,0.5);
+    margin-bottom: 0.5rem;
+  }
+  .escape-result .result-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: rgba(255,240,245,0.7);
+  }
+
+  /* ── LETTER SECTION ── */
+  #letter-section {
+    background: radial-gradient(ellipse at 40% 50%, rgba(61,0,8,0.25) 0%, transparent 65%);
+  }
+  .envelope-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    cursor: pointer;
+  }
+  .envelope {
+    background: linear-gradient(135deg, rgba(107,15,26,0.4), rgba(20,0,12,0.6));
+    border: 1px solid rgba(255,45,120,0.35);
+    border-radius: 16px;
+    padding: 2.5rem;
+    text-align: center;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: all 0.5s ease;
+    box-shadow: 0 0 50px rgba(255,45,120,0.1);
+  }
+  .envelope:hover { box-shadow: 0 0 80px rgba(255,45,120,0.25); }
+  .envelope-icon { font-size: 4rem; margin-bottom: 1rem; display: block; filter: drop-shadow(0 0 15px rgba(255,45,120,0.6)); }
+  .envelope-hint {
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,111,163,0.6);
+  }
+  .letter-content {
+    display: none;
+    background: linear-gradient(135deg, rgba(10,0,6,0.95), rgba(30,0,15,0.95));
+    border: 1px solid rgba(255,45,120,0.25);
+    border-radius: 16px;
+    padding: 2.5rem;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 0 60px rgba(255,45,120,0.15);
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  .letter-content.open { display: block; }
+  .letter-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    font-style: italic;
+    color: rgba(255,240,245,0.88);
+    line-height: 2;
+    white-space: pre-wrap;
+  }
+  .letter-sig {
+    margin-top: 2rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--neon-pink);
+    text-align: right;
+  }
+
+  /* ── BOUQUET ── */
+  #bouquet {
+    background: radial-gradient(ellipse at 60% 40%, rgba(107,15,26,0.2) 0%, transparent 65%);
+    text-align: center;
+  }
+  .bouquet-display {
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    margin: 2rem 0;
+    line-height: 1.4;
+    filter: drop-shadow(0 0 20px rgba(255,45,120,0.4));
+    animation: bouquetFloat 3s ease-in-out infinite;
+  }
+  @keyframes bouquetFloat {
+    0%,100%{ transform: translateY(0) scale(1); }
+    50%{ transform: translateY(-12px) scale(1.03); }
+  }
+  .bouquet-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.2rem, 3vw, 1.7rem);
+    font-style: italic;
+    color: rgba(255,240,245,0.8);
+    line-height: 1.9;
+  }
+
+  /* ── EASTER EGG TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 2rem; right: 2rem;
+    background: linear-gradient(135deg, rgba(107,15,26,0.95), rgba(20,0,12,0.95));
+    border: 1px solid rgba(255,45,120,0.4);
+    border-radius: 16px;
+    padding: 1rem 1.5rem;
+    max-width: 280px;
+    z-index: 9998;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 0 30px rgba(255,45,120,0.25);
+    animation: toastIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+    transform-origin: bottom right;
+  }
+  @keyframes toastIn {
+    from { opacity:0; transform: scale(0.7) translateY(20px); }
+    to { opacity:1; transform: scale(1) translateY(0); }
+  }
+  .toast-title {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--neon-pink);
+    margin-bottom: 0.3rem;
+  }
+  .toast-msg {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: rgba(255,240,245,0.85);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  /* ── FINAL ENDING ── */
+  #ending {
+    background: radial-gradient(ellipse at center, rgba(107,15,26,0.4) 0%, transparent 70%);
+    text-align: center;
+    gap: 2rem;
+  }
+  .ending-line {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.1rem, 3vw, 1.6rem);
+    font-style: italic;
+    color: rgba(255,240,245,0.85);
+    line-height: 2;
+    max-width: 600px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 1s ease, transform 1s ease;
+  }
+  .ending-line.visible { opacity: 1; transform: translateY(0); }
+  .ending-line strong {
+    font-family: 'Playfair Display', serif;
+    color: var(--neon-pink);
+    font-style: normal;
+    font-size: 1.1em;
+    text-shadow: 0 0 20px rgba(255,45,120,0.4);
+  }
+  .final-btn {
+    margin-top: 2rem;
+    padding: 1.1rem 3rem;
+    background: linear-gradient(135deg, var(--wine), var(--neon-pink), #C9A84C);
+    border: none; border-radius: 60px;
+    color: white;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 0 40px rgba(255,45,120,0.4), 0 4px 30px rgba(255,45,120,0.3);
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    animation: glowPulse 3s infinite;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  .final-btn.visible { opacity: 1; transform: translateY(0); transition: opacity 1s ease 0.5s, transform 1s ease 0.5s, box-shadow 0.4s, transform 0.1s; }
+  @keyframes glowPulse {
+    0%,100%{ box-shadow: 0 0 30px rgba(255,45,120,0.4); }
+    50%{ box-shadow: 0 0 60px rgba(255,45,120,0.7), 0 0 100px rgba(255,45,120,0.3); }
+  }
+  .final-btn:hover { transform: scale(1.06); }
+  .final-msg {
+    margin-top: 2rem;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.1rem, 3vw, 1.5rem);
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(201,168,76,0.4);
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  .final-msg.visible { opacity: 1; }
+
+  /* ── LOVE QUIZ ── */
+  .quiz-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.9rem 1.5rem;
+    margin: 0.5rem 0;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,45,120,0.2);
+    border-radius: 12px;
+    color: var(--cream);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+  .quiz-option:hover { background: rgba(255,45,120,0.1); border-color: rgba(255,45,120,0.5); }
+  .quiz-option.correct { background: rgba(0,200,80,0.15); border-color: rgba(0,200,80,0.5); color: #7fff7f; }
+  .quiz-option.wrong { background: rgba(255,45,120,0.15); border-color: rgba(255,45,120,0.6); }
+  .quiz-question {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-style: italic;
+    color: var(--cream);
+    margin-bottom: 1.2rem;
+    line-height: 1.7;
+  }
+  .quiz-score-display {
+    text-align: center;
+    padding: 1.5rem;
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* ── HEARTBEAT CLICKER ── */
+  .heartbeat-btn {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(107,15,26,0.9), rgba(255,45,120,0.7));
+    border: 2px solid rgba(255,45,120,0.5);
+    color: white;
+    font-size: 3rem;
+    cursor: pointer;
+    transition: all 0.1s;
+    box-shadow: 0 0 30px rgba(255,45,120,0.4);
+    display: block; margin: 1rem auto;
+  }
+  .heartbeat-btn:active { transform: scale(0.9); box-shadow: 0 0 60px rgba(255,45,120,0.8); }
+
+  /* ── SPIN WHEEL ── */
+  #wheel-canvas {
+    border-radius: 50%;
+    border: 3px solid rgba(255,45,120,0.5);
+    box-shadow: 0 0 40px rgba(255,45,120,0.3);
+    display: block; margin: 0 auto;
+    max-width: 280px; width: 100%;
+  }
+  .wheel-result {
+    margin-top: 1rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--neon-pink);
+    text-align: center;
+    min-height: 1.8em;
+    text-shadow: 0 0 15px rgba(255,45,120,0.5);
+  }
+
+  /* ── BALLOON POP ── */
+  .balloon-area {
+    position: relative;
+    height: 280px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: rgba(5,0,8,0.5);
+    border: 1px solid rgba(255,45,120,0.15);
+  }
+  .balloon {
+    position: absolute;
+    font-size: 2.5rem;
+    cursor: pointer;
+    user-select: none;
+    animation: balloonRise linear forwards;
+    transition: transform 0.1s;
+  }
+  .balloon:hover { transform: scale(1.15); }
+  @keyframes balloonRise {
+    from { bottom: -60px; opacity: 1; }
+    to { bottom: 110%; opacity: 0.7; }
+  }
+
+  /* ── PINKY PROMISE ── */
+  .pinky-area {
+    display: flex; flex-direction: column; align-items: center; gap: 1rem;
+  }
+  .pinky-btn {
+    width: 160px; height: 160px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(107,15,26,0.7), rgba(255,45,120,0.4));
+    border: 2px solid rgba(255,45,120,0.4);
+    font-size: 3.5rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .pinky-progress {
+    width: 100%; max-width: 300px; height: 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px; overflow: hidden;
+  }
+  .pinky-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--wine), var(--neon-pink));
+    width: 0%;
+    transition: width 0.1s;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(255,45,120,0.5);
+  }
+  .pinky-msg {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--soft-pink);
+    font-size: 1.05rem;
+    min-height: 1.5em;
+  }
+
+  /* ── FIND RING ── */
+  .ring-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+  .ring-cell {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,45,120,0.2);
+    font-size: 1.6rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .ring-cell:hover { background: rgba(255,45,120,0.1); transform: scale(1.05); }
+  .ring-cell.revealed { pointer-events: none; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: rgba(5,0,8,0.8); }
+  ::-webkit-scrollbar-thumb { background: rgba(255,45,120,0.4); border-radius: 4px; }
+
+  /* ── FLOATING PETAL ── */
+  .petal {
+    position: fixed;
+    pointer-events: none;
+    z-index: 3;
+    animation: petalFall linear forwards;
+    font-size: 1.1rem;
+    opacity: 0.7;
+  }
+  @keyframes petalFall {
+    0% { transform: translateY(-40px) rotate(0deg) translateX(0); opacity: 0.8; }
+    100% { transform: translateY(110vh) rotate(540deg) translateX(60px); opacity: 0; }
+  }
+
+  /* ── ACHIEVEMENT ── */
+  .achievement {
+    position: fixed;
+    top: 2rem; right: 2rem;
+    background: linear-gradient(135deg, rgba(30,0,15,0.97), rgba(107,15,26,0.97));
+    border: 1px solid var(--gold);
+    border-radius: 16px;
+    padding: 1rem 1.5rem;
+    z-index: 9998;
+    max-width: 280px;
+    box-shadow: 0 0 30px rgba(201,168,76,0.3);
+    animation: achieveIn 0.5s ease;
+    display: none;
+  }
+  .achievement.show { display: block; }
+  @keyframes achieveIn {
+    from { opacity:0; transform: translateX(40px); }
+    to { opacity:1; transform: translateX(0); }
+  }
+  .achieve-title {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.3rem;
+  }
+  .achieve-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--cream);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 600px) {
+    section { padding: 4rem 1.2rem; }
+    .story-grid { grid-template-columns: 1fr; }
+    .arcade-grid { grid-template-columns: 1fr; }
+    .escape-buttons { flex-direction: column; align-items: center; }
+    .modal-box { padding: 1.8rem; }
+    .ring-grid { grid-template-columns: repeat(4,1fr); gap:0.4rem; }
+  }
+
+  /* ── DIVIDER ── */
+  .glow-divider {
+    width: 100%; max-width: 400px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--neon-pink), transparent);
+    margin: 1rem auto;
+    opacity: 0.4;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="particle-canvas"></canvas>
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+
+<!-- ACHIEVEMENT POPUP -->
+<div class="achievement" id="achievement">
+  <div class="achieve-title">🏆 Achievement Unlocked</div>
+  <div class="achieve-text" id="achieve-text"></div>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="loading">
+  <div class="loading-rose">🌹</div>
+  <div id="typing-text"></div>
+  <div class="loading-bar-wrap">
+    <div class="loading-bar"></div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-badge">✨ A True Story ✨</div>
+  <h1 class="hero-title" data-text="From Interview to Forever">From Interview to Forever</h1>
+  <div class="glow-divider"></div>
+  <p class="hero-subtitle">A candidate entered for an interview…<br>and accidentally fell in love with the HR.</p>
+  <div class="hero-hearts">🌹 ❤️ 💍 ❤️ 🌹</div>
+  <div class="scroll-hint">↓ scroll to discover ↓</div>
+</section>
+
+<!-- STORY -->
+<section id="story">
+  <div class="section-label">Chapter One</div>
+  <h2 class="section-title">How It All Began</h2>
+  <div class="story-grid" id="story-grid">
+    <div class="story-card">
+      <span class="card-num">01</span>
+      <span class="emoji">😰</span>
+      <p>"I came nervous for an interview… rehearsing answers I'd never get to finish."</p>
+    </div>
+    <div class="story-card">
+      <span class="card-num">02</span>
+      <span class="emoji">✨</span>
+      <p>"Then I saw Miss Deepika. And the rehearsed answers simply… vanished."</p>
+    </div>
+    <div class="story-card">
+      <span class="card-num">03</span>
+      <span class="emoji">🥺</span>
+      <p>"She looked so unbelievably cute… I forgot half my answers. And I didn't even mind."</p>
+    </div>
+    <div class="story-card">
+      <span class="card-num">04</span>
+      <span class="emoji">💼</span>
+      <p>"You were the HR. I was just another candidate. The power gap was real — and yet…"</p>
+    </div>
+    <div class="story-card">
+      <span class="card-num">05</span>
+      <span class="emoji">💘</span>
+      <p>"Neither of us knew this interview would become a love story that no résumé could contain."</p>
+    </div>
+    <div class="story-card">
+      <span class="card-num">06</span>
+      <span class="emoji">🌹</span>
+      <p>"Some people leave interviews with a job offer. I left carrying something far more rare — feelings."</p>
+    </div>
+  </div>
+</section>
+
+<!-- ARCADE -->
+<section id="arcade">
+  <div class="section-label">Love Arcade</div>
+  <h2 class="section-title">Mini Games for Two Hearts 💘</h2>
+  <div class="arcade-grid">
+    <div class="game-card" onclick="openGame('catch')">
+      <span class="game-icon">❤️</span>
+      <div class="game-title">Catch the Hearts</div>
+      <div class="game-desc">Catch falling hearts before they escape. Just like feelings, timing is everything.</div>
+      <div class="game-score" id="score-catch">Best: 0</div>
+    </div>
+    <div class="game-card" onclick="openGame('ring')">
+      <span class="game-icon">💍</span>
+      <div class="game-title">Find the Ring</div>
+      <div class="game-desc">A ring is hidden among emojis. Will you find what you're looking for?</div>
+      <div class="game-score" id="score-ring">Attempts: 0</div>
+    </div>
+    <div class="game-card" onclick="openGame('heartbeat')">
+      <span class="game-icon">💓</span>
+      <div class="game-title">Heartbeat Clicker</div>
+      <div class="game-desc">Click as fast as your heart beats when you see her. Score high to prove it.</div>
+      <div class="game-score" id="score-heartbeat">Best: 0 BPM</div>
+    </div>
+    <div class="game-card" onclick="openGame('balloon')">
+      <span class="game-icon">🎈</span>
+      <div class="game-title">Balloon Pop</div>
+      <div class="game-desc">Pop the balloons before they float away — like moments, they don't last forever.</div>
+      <div class="game-score" id="score-balloon">Best: 0</div>
+    </div>
+    <div class="game-card" onclick="openGame('quiz')">
+      <span class="game-icon">💘</span>
+      <div class="game-title">Love Quiz</div>
+      <div class="game-desc">How well do you know the story of Sam & Miss Deepika? Test your heart knowledge.</div>
+      <div class="game-score" id="score-quiz">Score: 0/5</div>
+    </div>
+    <div class="game-card" onclick="openGame('pinky')">
+      <span class="game-icon">🤞</span>
+      <div class="game-title">Pinky Promise Hold</div>
+      <div class="game-desc">Press and hold to make a forever pinky promise. Don't let go too early.</div>
+      <div class="game-score" id="score-pinky">Kept: 0</div>
+    </div>
+    <div class="game-card" onclick="openGame('wheel')">
+      <span class="game-icon">🎡</span>
+      <div class="game-title">Spin the Love Wheel</div>
+      <div class="game-desc">Spin for a romantic fate — what does the universe have planned for you two?</div>
+      <div class="game-score" id="score-wheel">Spins: 0</div>
+    </div>
+    <div class="game-card" onclick="document.getElementById('escape-section').scrollIntoView({behavior:'smooth'})">
+      <span class="game-icon">😭</span>
+      <div class="game-title">Escape Button Game</div>
+      <div class="game-desc">Can Miss Deepika resist? One button runs, one stays. Click below to play.</div>
+      <div class="game-score">↓ Scroll to play ↓</div>
+    </div>
+  </div>
+</section>
+
+<!-- ESCAPE GAME -->
+<section id="escape-section">
+  <div class="section-label">The Big Question</div>
+  <h2 class="section-title">Will You Stay? 💕</h2>
+  <div class="escape-box" id="escape-box">
+    <p class="escape-question">Will you stay in Sam's world forever? ❤️</p>
+    <div class="escape-buttons" id="escape-btns">
+      <button class="btn-yes" onclick="escapeYes()">Always 💖</button>
+      <button class="btn-escape" id="escape-btn" onmouseover="moveEscape()" ontouchstart="moveEscape()">Catch me first 😭</button>
+    </div>
+    <div class="escape-msg" id="escape-msg"></div>
+    <div class="escape-result" id="escape-result">
+      <div class="result-title">📋 Application Status</div>
+      <div style="font-family:'Playfair Display',serif;font-size:2rem;color:var(--neon-pink);margin:0.5rem 0;text-shadow:0 0 25px rgba(255,45,120,0.6);">HIRED PERMANENTLY ❤️</div>
+      <div class="result-sub">No resignations accepted.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SECRET LOVE LETTER -->
+<section id="letter-section">
+  <div class="section-label">Sealed With Love</div>
+  <h2 class="section-title">A Letter Never Sent 💌</h2>
+  <div class="envelope-wrap" id="envelope-wrap">
+    <div class="envelope" id="envelope" onclick="openLetter()">
+      <span class="envelope-icon">💌</span>
+      <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.1rem;color:rgba(255,240,245,0.7);margin-bottom:0.5rem;">A letter Sam never dared to send…</p>
+      <span class="envelope-hint">tap to unseal</span>
+    </div>
+    <div class="letter-content" id="letter-content">
+      <div class="letter-text" id="letter-text"></div>
+      <div class="letter-sig">— Sam, who walked in for a job<br>and stayed for a lifetime 🌹</div>
+    </div>
+  </div>
+</section>
+
+<!-- BOUQUET -->
+<section id="bouquet">
+  <div class="section-label">For You</div>
+  <h2 class="section-title">A Bouquet of Feelings 💐</h2>
+  <div class="bouquet-display">🌹 🌸 🌺 💐 ✨ ❤️</div>
+  <div class="glow-divider"></div>
+  <p class="bouquet-text">
+    "Because flowers fade…<br>
+    but what I feel for you doesn't."
+  </p>
+</section>
+
+<!-- FINAL ENDING -->
+<section id="ending">
+  <div class="section-label">The End & The Beginning</div>
+  <p class="ending-line" id="el1">"Some people find <strong>jobs.</strong><br>Some people find <strong>success.</strong>"</p>
+  <p class="ending-line" id="el2">"I found <strong>you.</strong>"</p>
+  <div class="glow-divider"></div>
+  <p class="ending-line" id="el3">"And honestly?<br>I'd walk into that interview room<br>a <strong>thousand times</strong><br>just to meet you again."</p>
+  <button class="final-btn" id="final-btn" onclick="finalClick()">Forever Starts Here ❤️</button>
+  <p class="final-msg" id="final-msg">No resignations accepted. 🌹</p>
+</section>
+
+<!-- GAME MODAL -->
+<div class="modal-overlay" id="game-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ── CURSOR ──
+const cursor = document.getElementById('cursor');
+const trail = document.getElementById('cursor-trail');
+let mx=0,my=0;
+document.addEventListener('mousemove', e => {
+  mx=e.clientX; my=e.clientY;
+  cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+  setTimeout(()=>{ trail.style.left=mx+'px'; trail.style.top=my+'px'; },80);
+});
+
+// ── PARTICLE CANVAS ──
+const canvas = document.getElementById('particle-canvas');
+const ctx = canvas.getContext('2d');
+let W,H,particles=[];
+function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
+resize();
+window.addEventListener('resize',resize);
+
+class Particle {
+  constructor(){this.reset();}
+  reset(){
+    this.x=Math.random()*W;
+    this.y=Math.random()*H+H;
+    this.size=Math.random()*2+0.5;
+    this.speedY=-(Math.random()*0.4+0.15);
+    this.speedX=(Math.random()-0.5)*0.3;
+    this.opacity=Math.random()*0.6+0.2;
+    this.color=Math.random()<0.6?'255,45,120':'201,168,76';
+    this.life=1; this.decay=Math.random()*0.002+0.001;
+  }
+  update(){
+    this.y+=this.speedY; this.x+=this.speedX;
+    this.life-=this.decay;
+    if(this.y<-20||this.life<=0)this.reset();
+  }
+  draw(){
+    ctx.save();
+    ctx.globalAlpha=this.opacity*this.life;
+    ctx.fillStyle=`rgba(${this.color},1)`;
+    ctx.shadowBlur=8; ctx.shadowColor=`rgba(${this.color},0.8)`;
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+for(let i=0;i<120;i++) particles.push(new Particle());
+function animParticles(){
+  ctx.clearRect(0,0,W,H);
+  particles.forEach(p=>{ p.update(); p.draw(); });
+  requestAnimationFrame(animParticles);
+}
+animParticles();
+
+// ── FLOATING PETALS ──
+const petalEmojis=['🌸','🌹','🌺','🌷','💕','❤️','✨'];
+function spawnPetal(){
+  const el=document.createElement('div');
+  el.className='petal';
+  el.textContent=petalEmojis[Math.floor(Math.random()*petalEmojis.length)];
+  el.style.left=Math.random()*100+'vw';
+  el.style.top='-50px';
+  el.style.fontSize=(Math.random()*0.8+0.7)+'rem';
+  const dur=Math.random()*6+6;
+  el.style.animationDuration=dur+'s';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), dur*1000+500);
+}
+setInterval(spawnPetal, 700);
+
+// ── LOADING SCREEN ──
+const loadLines = [
+  "Some interviews change careers…",
+  "\nMine changed my life."
+];
+let tIdx=0, cIdx=0, lIdx=0;
+const typingEl=document.getElementById('typing-text');
+function typeChar(){
+  if(lIdx>=loadLines.length){ clearInterval(typeTimer); return; }
+  const line=loadLines[lIdx];
+  if(line[cIdx]==='\n'){ typingEl.innerHTML+='\n'; }
+  else { typingEl.textContent+=line[cIdx]||''; }
+  cIdx++;
+  if(cIdx>=line.length){ lIdx++; cIdx=0; if(lIdx<loadLines.length){ setTimeout(()=>{}, 300); } }
+}
+const typeTimer=setInterval(typeChar,65);
+setTimeout(()=>{
+  const loader=document.getElementById('loading');
+  loader.classList.add('hide');
+  setTimeout(()=>{ loader.style.display='none'; showToast("Sam.exe stopped working after eye contact.",3000); },1000);
+},4000);
+
+// ── TOAST ──
+let toastTimeout;
+function showToast(msg, dur=4000){
+  const old=document.querySelector('.toast');
+  if(old)old.remove();
+  const t=document.createElement('div');
+  t.className='toast';
+  t.innerHTML=`<div class="toast-title">💘 Notification</div><div class="toast-msg">${msg}</div>`;
+  document.body.appendChild(t);
+  clearTimeout(toastTimeout);
+  toastTimeout=setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity 0.5s'; setTimeout(()=>t.remove(),500); },dur);
+}
+
+// ── ACHIEVEMENT ──
+function showAchievement(txt){
+  const el=document.getElementById('achievement');
+  document.getElementById('achieve-text').textContent=txt;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),4000);
+}
+
+// ── RANDOM EASTER EGGS ──
+const easterToasts=[
+  "WARNING: Excessive cuteness detected. 💕",
+  "HR protocol breached — heart stolen. 🔒❤️",
+  "System alert: Sam.exe is daydreaming again.",
+  "Miss Deepika has entered the building. ✨",
+  "Love application: under permanent review 💌",
+  "Fun fact: Sam rehearsed 40 answers, remembered 2.",
+  "The interview lasted 30 mins. The feeling? Forever.",
+  "HR file update: Sam — Permanently Shortlisted ❤️"
+];
+setInterval(()=>{
+  if(Math.random()<0.35) showToast(easterToasts[Math.floor(Math.random()*easterToasts.length)]);
+},12000);
+
+// ── SCROLL ANIMATIONS ──
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting) e.target.classList.add('visible');
+  });
+},{threshold:0.15});
+document.querySelectorAll('.story-card,.ending-line,.final-btn,.final-msg').forEach(el=>observer.observe(el));
+
+// ── CONFETTI ──
+function launchConfetti(count=120, x, y){
+  const colors=['#FF2D78','#C9A84C','#FF6FA3','#fff','#6B0F1A','#FFD700'];
+  for(let i=0;i<count;i++){
+    const el=document.createElement('div');
+    el.style.cssText=`
+      position:fixed;
+      left:${x!=null?x:Math.random()*100}vw;
+      top:${y!=null?y:50}vh;
+      width:${Math.random()*8+4}px;
+      height:${Math.random()*8+4}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      border-radius:${Math.random()<0.5?'50%':'2px'};
+      pointer-events:none;
+      z-index:9999;
+      animation:confettiFall ${Math.random()*2+2}s ease forwards;
+      transform:rotate(${Math.random()*360}deg);
+    `;
+    document.body.appendChild(el);
+    const angle=Math.random()*Math.PI*2;
+    const dist=(Math.random()*200+100);
+    el.style.setProperty('--tx', Math.cos(angle)*dist+'px');
+    el.style.setProperty('--ty', (Math.random()*300+100)+'px');
+    setTimeout(()=>el.remove(),4000);
+  }
+}
+const confettiStyle=document.createElement('style');
+confettiStyle.textContent=`
+@keyframes confettiFall{
+  0%{opacity:1;transform:rotate(0deg) translate(0,0);}
+  100%{opacity:0;transform:rotate(720deg) translate(var(--tx),var(--ty));}
+}`;
+document.head.appendChild(confettiStyle);
+
+// ── ESCAPE GAME ──
+const escapeMsgs=["Too slow, Miss HR 😭","You already caught him once.","Application already approved 💘","The HR can't escape her own heart 💕","Running from love? Nice try. 😏"];
+let escapeTries=0;
+function moveEscape(){
+  const btn=document.getElementById('escape-btn');
+  if(!btn) return;
+  escapeTries++;
+  const bx=document.getElementById('escape-box').getBoundingClientRect();
+  const bw=btn.offsetWidth, bh=btn.offsetHeight;
+  const maxX=bx.width-bw-20;
+  const maxY=60;
+  btn.style.left=Math.max(10,Math.random()*maxX)+'px';
+  btn.style.top=(Math.random()*maxY)+'px';
+  const msg=document.getElementById('escape-msg');
+  msg.textContent=escapeMsgs[escapeTries%escapeMsgs.length];
+  msg.style.opacity='1';
+  if(escapeTries===3) showAchievement("The Escape Artist: Tried to run 3 times! 😂");
+}
+function escapeYes(){
+  document.getElementById('escape-btns').style.display='none';
+  document.getElementById('escape-msg').style.opacity='0';
+  document.getElementById('escape-result').style.display='block';
+  launchConfetti(160);
+  for(let i=0;i<12;i++) setTimeout(spawnPetal,i*100);
+  showAchievement("Permanent Employee of Sam's Heart ❤️");
+  setTimeout(()=>showToast("Application Status: HIRED PERMANENTLY 💘"),1000);
+}
+
+// ── LETTER ──
+const letterText=`Dear Miss Deepika,
+
+I thought I walked into that interview searching for a career… but life had completely different plans for me.
+
+The moment I saw you, something shifted — not dramatically, not loudly, but quietly. Like a page turning in a book you didn't know you'd been reading all along.
+
+You asked your questions so graciously. I fumbled through half my answers, not because I wasn't prepared — but because I was suddenly, unexpectedly distracted by something I couldn't name yet.
+
+It was the way you tilted your head when you listened. The way you made even a sterile interview room feel warm. The way you were so effortlessly, unreasonably… you.
+
+I left that building that day not knowing if I'd gotten the job. But I carried something far heavier — and far more precious — out with me.
+
+Feelings I hadn't asked for. Feelings I couldn't return.
+
+You were the HR. I was just a candidate. There are rules to worlds like ours.
+
+But the heart, as you know, doesn't read the employee handbook.
+
+So I'm writing this letter I'll probably never send, from a part of me that simply wants you to know — somewhere in this universe, someone thinks you are extraordinary.
+
+Not just beautiful. Not just kind.
+
+But the kind of person who makes a nervous stranger feel, just for a moment, like the world is softer than they thought.
+
+That was the real interview, Miss Deepika.
+
+And I think… I passed.`;
+
+let letterOpened=false;
+function openLetter(){
+  if(letterOpened) return;
+  letterOpened=true;
+  document.getElementById('envelope').style.display='none';
+  const content=document.getElementById('letter-content');
+  content.classList.add('open');
+  const textEl=document.getElementById('letter-text');
+  let i=0;
+  function typeLetterChar(){
+    if(i<letterText.length){
+      textEl.textContent+=letterText[i++];
+      content.scrollTop=content.scrollHeight;
+      setTimeout(typeLetterChar, i<30?60:18);
+    }
+  }
+  typeLetterChar();
+  showAchievement("Love Letter: Unlocked the unsent letter 💌");
+}
+
+// ── FINAL BUTTON ──
+function finalClick(){
+  launchConfetti(250);
+  for(let i=0;i<20;i++) setTimeout(spawnPetal, i*150);
+  document.body.style.animation='screenPulse 0.6s ease';
+  const pulseStyle=document.createElement('style');
+  pulseStyle.textContent=`@keyframes screenPulse{0%{filter:brightness(1);}50%{filter:brightness(1.4) saturate(1.5);}100%{filter:brightness(1);}}`;
+  document.head.appendChild(pulseStyle);
+  document.getElementById('final-msg').classList.add('visible');
+  showAchievement("Forever Begins: You clicked the button that changed everything 🌹");
+  setTimeout(()=>showToast("No resignations accepted. Ever. 🌹"),1500);
+}
+
+// ── GAME MODAL ──
+function openGame(type){
+  const modal=document.getElementById('game-modal');
+  modal.classList.add('open');
+  const content=document.getElementById('modal-content');
+  if(type==='catch') renderCatchGame(content);
+  else if(type==='ring') renderRingGame(content);
+  else if(type==='heartbeat') renderHeartbeatGame(content);
+  else if(type==='balloon') renderBalloonGame(content);
+  else if(type==='quiz') renderQuizGame(content);
+  else if(type==='pinky') renderPinkyGame(content);
+  else if(type==='wheel') renderWheelGame(content);
+}
+function closeModal(){
+  document.getElementById('game-modal').classList.remove('open');
+  document.getElementById('modal-content').innerHTML='';
+  if(catchAnim){ cancelAnimationFrame(catchAnim); catchAnim=null; }
+  if(balloonTimer){ clearInterval(balloonTimer); balloonTimer=null; }
+  if(pinkyTimer){ clearInterval(pinkyTimer); pinkyTimer=null; }
+}
+
+// ── CATCH HEARTS GAME ──
+let catchAnim=null;
+function renderCatchGame(el){
+  el.innerHTML=`<div class="modal-title">❤️ Catch the Hearts</div>
+  <div class="game-ui"><span id="ch-score">Score: 0</span><span id="ch-time">Time: 20s</span></div>
+  <canvas id="game-canvas" width="380" height="260"></canvas>
+  <div style="text-align:center;margin-top:1rem"><button class="btn-primary" onclick="startCatch()">Start Game</button></div>`;
+}
+function startCatch(){
+  const c=document.getElementById('game-canvas');
+  if(!c)return;
+  const ctx2=c.getContext('2d');
+  let score=0,timeLeft=20;
+  const W2=c.width,H2=c.height;
+  const basket={x:W2/2-35,y:H2-40,w:70,h:14};
+  let hearts=[];
+  let moving=false;
+  c.addEventListener('mousemove',e=>{
+    const r=c.getBoundingClientRect();
+    basket.x=Math.max(0,Math.min(W2-basket.w,(e.clientX-r.left)-basket.w/2));
+  });
+  c.addEventListener('touchmove',e=>{
+    e.preventDefault();
+    const r=c.getBoundingClientRect();
+    basket.x=Math.max(0,Math.min(W2-basket.w,(e.touches[0].clientX-r.left)-basket.w/2));
+  },{passive:false});
+
+  const heartSpawn=setInterval(()=>{
+    if(!moving) return;
+    hearts.push({x:Math.random()*(W2-20)+10,y:-20,speed:Math.random()*2+1.5,emoji:Math.random()<0.7?'❤️':'💕'});
+  },700);
+
+  const timer=setInterval(()=>{
+    timeLeft--;
+    const te=document.getElementById('ch-time');
+    if(te) te.textContent='Time: '+timeLeft+'s';
+    if(timeLeft<=0){
+      clearInterval(heartSpawn); clearInterval(timer);
+      moving=false;
+      const best=Math.max(score,parseInt(localStorage.getItem('catchBest')||'0'));
+      localStorage.setItem('catchBest',best);
+      const se=document.getElementById('ch-score');
+      if(se) se.textContent=`Score: ${score} | Best: ${best}`;
+      const scard=document.getElementById('score-catch');
+      if(scard) scard.textContent=`Best: ${best}`;
+      if(score>=10) showAchievement("Heart Catcher: Caught "+score+" hearts! 💕");
+    }
+  },1000);
+  moving=true;
+
+  if(catchAnim) cancelAnimationFrame(catchAnim);
+  function frame(){
+    if(!document.getElementById('game-canvas')){ cancelAnimationFrame(catchAnim); return; }
+    ctx2.clearRect(0,0,W2,H2);
+    ctx2.fillStyle='rgba(5,0,8,0.7)';
+    ctx2.fillRect(0,0,W2,H2);
+    // basket
+    const grad=ctx2.createLinearGradient(basket.x,0,basket.x+basket.w,0);
+    grad.addColorStop(0,'#6B0F1A'); grad.addColorStop(1,'#FF2D78');
+    ctx2.fillStyle=grad;
+    ctx2.beginPath();
+    ctx2.roundRect(basket.x,basket.y,basket.w,basket.h,7);
+    ctx2.fill();
+    ctx2.shadowBlur=15; ctx2.shadowColor='#FF2D78';
+    // hearts
+    ctx2.font='22px serif';
+    ctx2.textAlign='center';
+    hearts.forEach(h=>{ h.y+=h.speed; ctx2.fillText(h.emoji,h.x,h.y); });
+    // collisions
+    hearts=hearts.filter(h=>{
+      if(h.y>basket.y && h.y<basket.y+basket.h+20 && h.x>basket.x && h.x<basket.x+basket.w){
+        score++;
+        const se=document.getElementById('ch-score');
+        if(se) se.textContent='Score: '+score;
+        launchConfetti(6, h.x/W2*100, h.y/H2*100);
+        return false;
+      }
+      return h.y<H2+20;
+    });
+    ctx2.shadowBlur=0;
+    catchAnim=requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+// ── RING GAME ──
+const ringEmojis=['💄','👜','📋','✏️','📎','☕','📱','💻','🗂️','📞','🖊️','📌','🔑','📁','🎀','🏢'];
+function renderRingGame(el){
+  let attempts=parseInt(localStorage.getItem('ringAttempts')||'0');
+  const ringPos=Math.floor(Math.random()*16);
+  let found=false;
+  el.innerHTML=`<div class="modal-title">💍 Find the Ring</div>
+  <p style="font-family:'Cormorant Garamond',serif;font-style:italic;text-align:center;color:rgba(255,240,245,0.7);margin-bottom:1.2rem;font-size:1rem;">The ring is hidden somewhere among Sam's desk items…</p>
+  <div class="ring-grid" id="ring-grid"></div>
+  <div style="text-align:center;margin-top:1rem;font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--soft-pink)" id="ring-msg"></div>
+  <div style="text-align:center;margin-top:0.5rem;font-size:0.8rem;color:rgba(255,240,245,0.4)">Attempts: <span id="ring-attempts">${attempts}</span></div>`;
+  const grid=document.getElementById('ring-grid');
+  for(let i=0;i<16;i++){
+    const cell=document.createElement('div');
+    cell.className='ring-cell';
+    cell.textContent='❓';
+    cell.onclick=()=>{
+      if(found)return;
+      attempts++;
+      localStorage.setItem('ringAttempts',attempts);
+      document.getElementById('ring-attempts').textContent=attempts;
+      cell.classList.add('revealed');
+      if(i===ringPos){
+        cell.textContent='💍';
+        found=true;
+        document.getElementById('ring-msg').textContent='You found it! 💍 Just like Sam found his heart.';
+        launchConfetti(80);
+        showAchievement("Ring Found: Discovered the hidden ring! 💍");
+        document.getElementById('score-ring').textContent=`Attempts: ${attempts}`;
+      } else {
+        cell.textContent=ringEmojis[i%ringEmojis.length];
+        const hints=['Not here… keep looking 💕','Almost! …Maybe.','Sam hid it well 😅','Still searching like Sam 💘'];
+        document.getElementById('ring-msg').textContent=hints[Math.floor(Math.random()*hints.length)];
+      }
+    };
+    grid.appendChild(cell);
+  }
+}
+
+// ── HEARTBEAT ──
+function renderHeartbeatGame(el){
+  let clicks=0,best=parseInt(localStorage.getItem('hbBest')||'0'),going=false,t;
+  el.innerHTML=`<div class="modal-title">💓 Heartbeat Clicker</div>
+  <p style="font-family:'Cormorant Garamond',serif;font-style:italic;text-align:center;color:rgba(255,240,245,0.6);margin-bottom:0.5rem;">Click as fast as your heart beats for 5 seconds!</p>
+  <button class="heartbeat-btn" id="hb-btn" onclick="hbClick()">💓</button>
+  <div style="text-align:center">
+    <div style="font-size:1.4rem;color:var(--neon-pink);font-family:'Playfair Display',serif" id="hb-display">Ready!</div>
+    <div style="font-size:0.8rem;color:rgba(255,240,245,0.4);margin-top:0.3rem">Best: ${best} BPM</div>
+  </div>
+  <div style="text-align:center;margin-top:1rem"><button class="btn-primary" onclick="startHb()">Start</button></div>`;
+
+  window.startHb=()=>{
+    if(going)return;
+    going=true; clicks=0;
+    const disp=document.getElementById('hb-display');
+    if(disp) disp.textContent='Click! 💓';
+    t=setTimeout(()=>{
+      going=false;
+      const bpm=clicks*12;
+      if(bpm>best){ best=bpm; localStorage.setItem('hbBest',best); document.getElementById('score-heartbeat').textContent=`Best: ${best} BPM`; }
+      if(disp) disp.textContent=`${bpm} BPM! ${bpm>120?'💘 That\'s love!':bpm>80?'Pretty good 💕':'Try again! 💔'}`;
+      if(bpm>150) showAchievement("Crazy in Love: "+bpm+" BPM detected! 💓");
+    },5000);
+  };
+  window.hbClick=()=>{
+    if(!going)return;
+    clicks++;
+    const btn=document.getElementById('hb-btn');
+    if(btn){ btn.style.transform='scale(0.88)'; setTimeout(()=>{ if(btn) btn.style.transform='scale(1)'; },80); }
+  };
+}
+
+// ── BALLOON POP ──
+let balloonTimer=null;
+function renderBalloonGame(el){
+  let score=0,best=parseInt(localStorage.getItem('balloonBest')||'0'),going=false;
+  el.innerHTML=`<div class="modal-title">🎈 Balloon Pop</div>
+  <div class="game-ui"><span id="bp-score">Score: 0</span><span id="bp-time">Time: 15s</span></div>
+  <div class="balloon-area" id="balloon-area"></div>
+  <div style="text-align:center;margin-top:1rem"><button class="btn-primary" onclick="startBalloons()">Start</button></div>
+  <div style="text-align:center;margin-top:0.5rem;font-size:0.8rem;color:rgba(255,240,245,0.4)">Best: <span id="bp-best">${best}</span></div>`;
+
+  window.startBalloons=()=>{
+    if(going) return;
+    going=true; score=0;
+    let timeLeft=15;
+    const area=document.getElementById('balloon-area');
+    if(balloonTimer) clearInterval(balloonTimer);
+    const tTimer=setInterval(()=>{
+      timeLeft--;
+      const te=document.getElementById('bp-time');
+      if(te) te.textContent='Time: '+timeLeft+'s';
+      if(timeLeft<=0){
+        clearInterval(tTimer); clearInterval(balloonTimer); balloonTimer=null; going=false;
+        if(score>best){ best=score; localStorage.setItem('balloonBest',best); document.getElementById('score-balloon').textContent=`Best: ${best}`; }
+        const be=document.getElementById('bp-best'); if(be) be.textContent=best;
+        if(score>=8) showAchievement("Balloon Buster: Popped "+score+" balloons! 🎈");
+      }
+    },1000);
+    const bEmojis=['🎈','💝','🌸','🌹','💕'];
+    balloonTimer=setInterval(()=>{
+      if(!going||!document.getElementById('balloon-area')) return;
+      const b=document.createElement('div');
+      b.className='balloon';
+      b.textContent=bEmojis[Math.floor(Math.random()*bEmojis.length)];
+      b.style.left=(Math.random()*80+5)+'%';
+      const dur=Math.random()*3+2;
+      b.style.animationDuration=dur+'s';
+      b.onclick=()=>{
+        if(!going)return;
+        score++;
+        const se=document.getElementById('bp-score'); if(se) se.textContent='Score: '+score;
+        b.style.transform='scale(0)';
+        b.style.transition='transform 0.2s';
+        setTimeout(()=>b.remove(),200);
+        launchConfetti(8,parseFloat(b.style.left),50);
+      };
+      area.appendChild(b);
+      setTimeout(()=>b.remove(),dur*1000+500);
+    },600);
+  };
+}
+
+// ── LOVE QUIZ ──
+const quizData=[
+  {q:"What was Sam looking for when he entered the interview?",opts:["A career opportunity","Miss Deepika","A love story","Free snacks"],ans:0},
+  {q:"What made Sam forget half his answers?",opts:["The tough questions","Miss Deepika's presence","Nervousness","Bad WiFi"],ans:1},
+  {q:"What was Miss Deepika's role?",opts:["The interviewer's assistant","The CEO","The HR","The receptionist"],ans:2},
+  {q:"What did Sam carry out of the interview?",opts:["A job offer","A business card","Feelings he hadn't asked for","His resume"],ans:3},
+  {q:"What would Sam do a thousand times?",opts:["Write the love letter","Walk into that interview room","Spin the love wheel","Send flowers"],ans:1}
+];
+function renderQuizGame(el){
+  let qIdx=0,score=0;
+  function render(){
+    if(qIdx>=quizData.length){
+      const best=Math.max(score,parseInt(localStorage.getItem('quizBest')||'0'));
+      localStorage.setItem('quizBest',best);
+      document.getElementById('score-quiz').textContent=`Score: ${best}/5`;
+      el.innerHTML=`<div class="modal-title">💘 Love Quiz Complete!</div>
+      <div class="quiz-score-display">
+        <div style="font-size:3rem;margin-bottom:1rem">${score>=4?'💕':score>=2?'💘':'💔'}</div>
+        <div style="font-size:1.5rem;color:var(--neon-pink);font-family:'Playfair Display',serif">${score}/5 Correct</div>
+        <p style="margin-top:1rem;font-family:'Cormorant Garamond',serif;font-style:italic;color:rgba(255,240,245,0.7)">${score>=4?'You know this love story by heart! 💕':score>=2?'Getting there… love takes time. 💘':'Sam would be disappointed. 💔'}</p>
+        <button class="btn-primary" style="margin-top:1.5rem" onclick="renderQuizGame(document.getElementById('modal-content'))">Try Again</button>
+      </div>`;
+      if(score===5) showAchievement("Perfect Score: You know Sam & Deepika's story by heart! 💘");
+      return;
+    }
+    const q=quizData[qIdx];
+    el.innerHTML=`<div class="modal-title">💘 Love Quiz <span style="font-size:0.8rem;opacity:0.6">${qIdx+1}/5</span></div>
+    <p class="quiz-question">${q.q}</p>
+    ${q.opts.map((o,i)=>`<button class="quiz-option" onclick="qAnswer(${i})">${o}</button>`).join('')}`;
+    window.qAnswer=(i)=>{
+      const btns=el.querySelectorAll('.quiz-option');
+      btns.forEach(b=>b.disabled=true);
+      btns[q.ans].classList.add('correct');
+      if(i===q.ans){ score++; launchConfetti(30); }
+      else { btns[i].classList.add('wrong'); }
+      setTimeout(()=>{ qIdx++; render(); },1200);
+    };
+  }
+  render();
+}
+
+// ── PINKY PROMISE ──
+let pinkyTimer=null;
+function renderPinkyGame(el){
+  let held=false,progress=0,kept=parseInt(localStorage.getItem('pinkyKept')||'0');
+  el.innerHTML=`<div class="modal-title">🤞 Pinky Promise</div>
+  <p style="font-family:'Cormorant Garamond',serif;font-style:italic;text-align:center;color:rgba(255,240,245,0.6);margin-bottom:1.2rem">Press & hold for 3 seconds to make the promise.</p>
+  <div class="pinky-area">
+    <button class="pinky-btn" id="pinky-btn">🤞</button>
+    <div class="pinky-progress"><div class="pinky-fill" id="pinky-fill"></div></div>
+    <div class="pinky-msg" id="pinky-msg">Hold to promise forever…</div>
+  </div>
+  <div style="text-align:center;margin-top:1rem;font-size:0.8rem;color:rgba(255,240,245,0.4)">Promises kept: <span id="pinky-kept">${kept}</span></div>`;
+
+  const btn=document.getElementById('pinky-btn');
+  if(!btn)return;
+  const fill=document.getElementById('pinky-fill');
+  const msg=document.getElementById('pinky-msg');
+
+  function start(){
+    if(held)return;
+    held=true; progress=0;
+    if(pinkyTimer) clearInterval(pinkyTimer);
+    pinkyTimer=setInterval(()=>{
+      if(!held){ clearInterval(pinkyTimer); return; }
+      progress=Math.min(100,progress+3);
+      if(fill) fill.style.width=progress+'%';
+      if(progress>=100){
+        clearInterval(pinkyTimer);
+        held=false; kept++;
+        localStorage.setItem('pinkyKept',kept);
+        const ke=document.getElementById('pinky-kept'); if(ke) ke.textContent=kept;
+        document.getElementById('score-pinky').textContent=`Kept: ${kept}`;
+        if(msg) msg.textContent='Promise kept forever! 🤞💕';
+        launchConfetti(60);
+        if(kept>=3) showAchievement("Promise Keeper: Kept "+kept+" forever promises! 🤞");
+        setTimeout(()=>{ if(msg) msg.textContent='Hold to promise forever…'; if(fill) fill.style.width='0%'; },3000);
+      } else if(progress<40){ if(msg) msg.textContent='Keep going… 🤞'; }
+      else if(progress<80){ if(msg) msg.textContent='Almost there… 💕'; }
+      else { if(msg) msg.textContent='Just a little more… 💖'; }
+    },50);
+  }
+  function stop(){
+    if(progress<100){ held=false; if(pinkyTimer) clearInterval(pinkyTimer); if(fill) fill.style.width='0%'; if(msg) msg.textContent='You let go too soon! 💔 Try again.'; }
+  }
+  btn.addEventListener('mousedown',start);
+  btn.addEventListener('touchstart',e=>{e.preventDefault();start();},{passive:false});
+  btn.addEventListener('mouseup',stop);
+  btn.addEventListener('mouseleave',stop);
+  btn.addEventListener('touchend',stop);
+}
+
+// ── SPIN WHEEL ──
+const wheelItems=['Kiss 💋','Hug 🤗','Love Letter 💌','Promise Ring 💍','Dance 💃','Serenade 🎵','Roses 🌹','Forever 💕'];
+const wheelColors=['#6B0F1A','#8B1530','#A0183A','#BF1B40','#6B0F1A','#7D1220','#991528','#B31836'];
+function renderWheelGame(el){
+  let spinning=false,angle=0,spins=parseInt(localStorage.getItem('wheelSpins')||'0');
+  el.innerHTML=`<div class="modal-title">🎡 Love Wheel</div>
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center">
+    <div style="font-size:1.8rem;position:relative;z-index:2;color:var(--neon-pink);margin-bottom:-8px">▼</div>
+    <canvas id="wheel-canvas" width="280" height="280"></canvas>
+    <div class="wheel-result" id="wheel-result"></div>
+    <button class="btn-primary" style="margin-top:1.2rem" onclick="spinWheel()">Spin 🎡</button>
+    <div style="margin-top:0.5rem;font-size:0.75rem;color:rgba(255,240,245,0.35)">Total spins: <span id="spin-count">${spins}</span></div>
+  </div>`;
+  const c=document.getElementById('wheel-canvas');
+  if(!c)return;
+  const cx=c.getContext('2d');
+  function drawWheel(rot){
+    cx.clearRect(0,0,280,280);
+    const sliceAngle=(Math.PI*2)/wheelItems.length;
+    wheelItems.forEach((item,i)=>{
+      const start=rot+i*sliceAngle;
+      cx.beginPath();
+      cx.moveTo(140,140);
+      cx.arc(140,140,130,start,start+sliceAngle);
+      cx.closePath();
+      cx.fillStyle=wheelColors[i];
+      cx.shadowBlur=0;
+      cx.fill();
+      cx.strokeStyle='rgba(255,45,120,0.3)';
+      cx.lineWidth=1.5;
+      cx.stroke();
+      cx.save();
+      cx.translate(140,140);
+      cx.rotate(start+sliceAngle/2);
+      cx.textAlign='right';
+      cx.fillStyle='rgba(255,240,245,0.9)';
+      cx.font='bold 11px Inter,sans-serif';
+      cx.shadowBlur=4; cx.shadowColor='rgba(0,0,0,0.5)';
+      cx.fillText(item,120,4);
+      cx.restore();
+    });
+    cx.beginPath();
+    cx.arc(140,140,18,0,Math.PI*2);
+    cx.fillStyle='#050008';
+    cx.fill();
+    cx.strokeStyle='rgba(255,45,120,0.6)';
+    cx.lineWidth=2;
+    cx.stroke();
+  }
+  drawWheel(0);
+  window.spinWheel=()=>{
+    if(spinning)return;
+    spinning=true;
+    const extra=Math.PI*2*(6+Math.random()*6);
+    const target=angle+extra;
+    const dur=3000;
+    const start=performance.now();
+    const startAngle=angle;
+    spins++;
+    localStorage.setItem('wheelSpins',spins);
+    document.getElementById('score-wheel').textContent=`Spins: ${spins}`;
+    const sc=document.getElementById('spin-count'); if(sc) sc.textContent=spins;
+    function anim(now){
+      const elapsed=now-start;
+      const t=Math.min(elapsed/dur,1);
+      const ease=t<0.5?4*t*t*t:(t-1)*(2*t-2)*(2*t-2)+1;
+      angle=startAngle+extra*ease;
+      drawWheel(angle);
+      if(t<1){ requestAnimationFrame(anim); return; }
+      spinning=false;
+      const normalized=((angle%(Math.PI*2))+Math.PI*2)%(Math.PI*2);
+      const idx=Math.floor(((Math.PI*2-normalized)%(Math.PI*2))/(Math.PI*2/wheelItems.length))%wheelItems.length;
+      const result=wheelItems[idx];
+      const rEl=document.getElementById('wheel-result');
+      if(rEl) rEl.textContent=`You got: ${result}`;
+      launchConfetti(50);
+      if(spins>=5) showAchievement("Fate Spinner: Spun the wheel 5 times! 🎡");
+    }
+    requestAnimationFrame(anim);
+  };
+}
+
+// ── EASTER EGGS — HIDDEN TAPS ──
+let tapCount=0;
+document.getElementById('hero').addEventListener('click',e=>{
+  tapCount++;
+  if(tapCount===3) showToast("Easter Egg 🥚: Triple tap detected! Sam triple-checked his tie too.");
+  if(tapCount===7) showAchievement("Secret Found: You tapped the hero 7 times 🌹");
+  spawnPetal();
+});
+let logoTaps=0;
+document.querySelector('.hero-title').addEventListener('click',()=>{
+  logoTaps++;
+  if(logoTaps===5){ showAchievement("Easter Egg: Title unlocked after 5 taps! 🌟"); launchConfetti(80); }
+});
+
+// ── KONAMI / SECRET ──
+let kSeq=[],kCode=[38,38,40,40,37,39,37,39,66,65];
+document.addEventListener('keydown',e=>{
+  kSeq.push(e.keyCode);
+  if(kSeq.length>10) kSeq.shift();
+  if(kSeq.join(',')===kCode.join(',')){ launchConfetti(200); showAchievement("Konami Code: You're a true gamer AND a romantic 🕹️❤️"); kSeq=[]; }
+});
+
+// ── INIT ──
+window.addEventListener('load',()=>{
+  setTimeout(()=>{ showToast("Welcome. This is the story of Sam & Miss Deepika. 🌹"); },5500);
+  setTimeout(()=>{ showAchievement("Story Started: The interview begins… 📋"); },9000);
+});
+</script>
+</body>
+</html>
